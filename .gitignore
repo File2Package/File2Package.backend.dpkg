@@ -1,0 +1,16 @@
+__pycache__
+*.pyc
+*.pyo
+/*.egg-info
+/build
+/dist
+/.eggs
+*.sqlite3
+/.mypy_cache
+*.py,cover
+/.coverage
+/rspec.xml
+/monkeytype.sqlite3
+/*.srctrldb
+/*.srctrlbm
+/*.srctrlprj

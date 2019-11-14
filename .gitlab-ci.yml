@@ -1,0 +1,70 @@
+#image: pypy:latest
+image: registry.gitlab.com/kolanich-subgroups/docker-images/fixed_python:latest
+stages:
+  - dependencies
+  - build
+  - trigger
+  - test
+
+variables:
+  DOCKER_DRIVER: overlay2
+  SAST_ANALYZER_IMAGE_TAG: latest
+  SAST_DISABLE_DIND: "true"
+
+include:
+  - template: SAST.gitlab-ci.yml
+  #- template: DAST.gitlab-ci.yml
+  #- template: License-Management.gitlab-ci.yml
+  #- template: Container-Scanning.gitlab-ci.yml
+  #- template: Dependency-Scanning.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
+
+
+build:
+  tags:
+    - shared
+    - linux
+  stage: build
+  variables:
+    GIT_DEPTH: "1"
+    PYTHONUSERBASE: ${CI_PROJECT_DIR}/python_user_packages
+
+  before_script:
+    - export PYTHON_MODULES_DIR=${PYTHONUSERBASE}/lib/python3.8
+    - export EXECUTABLE_DEPENDENCIES_DIR=${PYTHONUSERBASE}/bin
+    - export PATH="$PATH:$EXECUTABLE_DEPENDENCIES_DIR" # don't move into `variables` any of them, it is unordered
+    - apt-get update
+    - apt-get install -y python3-apt python3-psutil
+    - python3 ./fix_python_modules_paths.py
+    - pip install --user --upgrade --pre git+https://gitlab.com/File2Package.py/File2Package.py.git git+https://github.com/amoffat/sh.git git+https://github.com/KOLANICH/python-debparse.git@fixes
+    - mkdir ./wheels
+
+  script:
+    - python3 ./setup.py bdist_wheel
+    - mv ./dist/*.whl ./wheels/File2Package.backend.dpkg-0.CI_python-py3-none-any.whl
+    - pip3 install --upgrade --pre --user ./wheels/File2Package.backend.dpkg-0.CI_python-py3-none-any.whl
+    - coverage run --source=File2Package.backend.dpkg --branch -m pytest --junitxml=./rspec.xml ./tests/tests.py
+    - coverage report -m
+    - coverage xml
+
+  coverage: /^TOTAL\\s+.+?(\\d{1,3}%)$/
+
+  cache:
+    paths:
+      - $PYTHONUSERBASE
+
+  artifacts:
+    paths:
+      - wheels
+    reports:
+      junit: ./rspec.xml
+      cobertura: ./coverage.xml
+
+update_prebuilder_dependencies_image:
+  only:
+    - master
+  stage: trigger
+  allow_failure: true
+  trigger:
+    project: KOLANICH-subgroups/docker-images/prebuilder_dependencies
+    strategy: depend

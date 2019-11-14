@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.2.0", "wheel", "setuptools_scm[toml]>=3.4.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "File2Package.backend.dpkg"
+authors = [{name = "KOLANICH"}]
+description = "A dpkg backend for File2Package."
+readme = "ReadMe.md"
+keywords = ["package", "location", "apt", "dpkg", "debian", "ubuntu", "antix", "kali"]
+license = {text = "Unlicense"}
+classifiers = [
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Development Status :: 4 - Beta",
+	"Environment :: Other Environment",
+	"Intended Audience :: Developers",
+	"License :: Public Domain",
+	"Operating System :: OS Independent",
+	"Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.4"
+dependencies = [
+	"File2Package @ git+https://github.com/File2Package/File2Package.py.git",
+	"debparse @ git+https://github.com/prebuilder/python-debparse.git@fixes",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/File2Package/File2Package.backend.dpkg"
+
+[project.entry-points]
+file_2_package = {dpkg = "File2Package.backend.dpkg:init"}
+
+[tool.setuptools]
+zip-safe = true
+py-modules = ["File2Package.backend.dpkg"]
+
+[tool.setuptools_scm]
